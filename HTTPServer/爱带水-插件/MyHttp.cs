@@ -8,9 +8,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Threading;
+using System.Windows.Forms;
 
-namespace HttpServer
+namespace 爱带水_插件
 {
+    [ComVisible(true)]//com+可见
     class cmdObj
     {
         [PermissionSet(SecurityAction.Demand, Name = "FullTrust")]
@@ -49,27 +51,23 @@ namespace HttpServer
         );
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0100;
-        private String cmd = "no", money = "no";
-        public cmdObj()
-        {
+        private String cmd="no", money="no";
+        public cmdObj() {
 
         }
-        public cmdObj(String c, String m)
-        {
+        public cmdObj(String c,String m) {
             this.cmd = c;
             this.money = m;
         }
-        public void setCmd(String cmd)
-        {
+        public void setCmd(String cmd) {
             this.cmd = cmd;
         }
-        public void set(String k, String v)
+        public void set(String k,String v)
         {
             if (k == "cmd")
             {
                 this.cmd = v;
-            }
-            else if (k == "money")
+            }else if (k == "money")
             {
                 this.money = v;
             }
@@ -78,28 +76,24 @@ namespace HttpServer
         {
             this.money = money;
         }
-        public String getCmd()
-        {
+        public String getCmd() {
             return this.cmd;
         }
-        public String getMoney()
-        {
+        public String getMoney() {
             return this.money;
         }
-        public string toString()
-        {
-            return this.cmd + ";" + this.money;
+        public string toString() {
+            return this.cmd+";"+this.money;
         }
-        public void run()
-        {
+        public void run() {
             IntPtr mainHandle = FindWindow(null, "体育平台 - Google Chrome");
-            if (this.cmd == "select")
+            if (this.cmd== "select")
             {
                 if (mainHandle != IntPtr.Zero)
                 {
                     //通过句柄设置当前窗体最大化（0：隐藏窗体，1：默认窗体，2：最小化窗体，3：最大化窗体，....）
                     SwitchToThisWindow(mainHandle, true);
-                    Thread.Sleep(200);
+                    Thread.Sleep(400);
                     for (int i = 0; i < this.money.Length; i++)
                     {
                         Thread.Sleep(30);
@@ -110,43 +104,45 @@ namespace HttpServer
                 }
                 else
                 {
-                    Console.WriteLine("没有找到沙巴窗口,请重新尝试");
+                    MessageBox.Show("没有找到窗口,请重新尝试");
                     mainHandle = FindWindow(null, "体育平台 - Google Chrome");
                 }
-            }
-            else if (this.cmd == "bet")
+            }else if (this.cmd == "bet")
             {
                 if (mainHandle != IntPtr.Zero)
                 {
                     //通过句柄设置当前窗体最大化（0：隐藏窗体，1：默认窗体，2：最小化窗体，3：最大化窗体，....）
                     SwitchToThisWindow(mainHandle, true);
-                    Thread.Sleep(200);
+                    Thread.Sleep(400);
                     KeyBoard.sendEnter();
                     Thread.Sleep(150);
-                    KeyBoard.sendEnter();
+                    //KeyBoard.sendEnter();
                 }
                 else
                 {
-                   Console.WriteLine("没有找到沙巴窗口,请重新尝试");
+                    MessageBox.Show("没有找到窗口,请重新尝试");
                     mainHandle = FindWindow(null, "体育平台 - Google Chrome");
                 }
             }
         }
     }
     [ComVisible(true)]//com+可见
-    public class ExampleServer : HTTPServerLib.HttpServer
+    class MyHttp : HTTPServerLib.HttpServer
     {
+        
+
+
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="ipAddress">IP地址</param>
         /// <param name="port">端口号</param>
-        public ExampleServer(string ipAddress, int port)
+        public MyHttp(string ipAddress, int port)
             : base(ipAddress, port)
         {
 
         }
-        private cmdObj CmdObj = new cmdObj();
+        public cmdObj CmdObj = new cmdObj();
         public override void OnPost(HttpRequest request, HttpResponse response)
         {
             //获取客户端传递的参数
@@ -154,33 +150,25 @@ namespace HttpServer
 
             string[] sArray = data.Split(';');
             string temp = "";
-            //Console.WriteLine(data);
             foreach (string i in sArray)
             {
                 temp += i;
-                string[] ccc = i.Split('=');
-                
-                if (ccc.Length == 2)
-                {
-                    CmdObj.set(ccc[0], ccc[1]);
-                }
-                
+                string[] ccc =i.Split('=');
+                CmdObj.set(ccc[0],ccc[1]);
             }
-
-
 
             //request.Params.Select(x => CmdObj.set(x.Key, x.Value));
             //设置返回信息
             //string content = string.Format(CmdObj.ToString());
 
             //构造响应报文
-            Console.WriteLine(CmdObj.toString());
+            
             response.SetContent(CmdObj.toString());
             response.Content_Encoding = "utf-8";
             response.StatusCode = "200";
             response.Content_Type = "text/html; charset=UTF-8";
             response.Headers["Server"] = "ExampleServer";
-            response.Headers["Access-Control-Allow-Origin"] = "*";
+
             //发送响应
             response.Send();
             CmdObj.run();
@@ -199,51 +187,16 @@ namespace HttpServer
             string requestURL = request.URL;
             requestURL = requestURL.Replace("/", @"\").Replace("\\..", "").TrimStart('\\');
             string requestFile = Path.Combine(ServerRoot, requestURL);
-            //Console.WriteLine(request.URL);
+
             //判断地址中是否存在扩展名
             string extension = Path.GetExtension(requestFile);
-            string[] sArray = request.URL.Split('/');
-            if (sArray.Length == 3)
-            {
-                CmdObj.setCmd(sArray[1]);
-                CmdObj.setMoney(sArray[2]);
-                CmdObj.run();
-            }
-            else
-            {
-                Console.WriteLine("参数错误!");
-            }
+            System.Console.WriteLine(request.URL);
             //根据有无扩展名按照两种不同链接进行处
-            if (extension != "")
-            {
-                //从文件中返回HTTP响应
-                //response = response.FromFile(requestFile);
-                response.SetContent("hello1");
-            } 
-            else
-            {
-                //目录存在且不存在index页面时时列举目录
-                if (Directory.Exists(requestFile) && !File.Exists(requestFile + "\\index.html"))
-                {
-                    requestFile = Path.Combine(ServerRoot, requestFile);
-                    var content = ListDirectory(requestFile, requestURL);
-                    response = response.SetContent(content, Encoding.UTF8);
-                    response.Content_Type = "text/html; charset=UTF-8";
-                } 
-                else
-                {
-                    //加载静态HTML页面
-                    requestFile = Path.Combine(requestFile, "index.html");
-                    response = response.FromFile(requestFile);
-                    response.Content_Type = "text/html; charset=UTF-8";
-                }
-                
-            }
+            //构造响应报文
             response.Content_Encoding = "utf-8";
             response.StatusCode = "200";
             response.Content_Type = "text/html; charset=UTF-8";
             response.Headers["Server"] = "ExampleServer";
-            response.Headers["Access-Control-Allow-Origin"] = "*";
             response.SetContent(request.URL);
             //发送HTTP响应
             response.Send();

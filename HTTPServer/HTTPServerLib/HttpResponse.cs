@@ -80,6 +80,7 @@ namespace HTTPServerLib
 
             if (!string.IsNullOrEmpty(this.Content_Type))
                 builder.AppendLine("Content-Type:" + this.Content_Type);
+            builder.AppendLine("Access-Control-Allow-Origin:*");
             return builder.ToString();
         }
 

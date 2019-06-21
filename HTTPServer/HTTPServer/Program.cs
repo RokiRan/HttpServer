@@ -12,10 +12,12 @@ namespace HTTPServerLib
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("插件运行中...");
             ExampleServer server = new ExampleServer("0.0.0.0", 4050);
-            server.SetRoot(@"D:\Hexo\public");
-            server.Logger = new ConsoleLogger();
+            //server.SetRoot(@"D:\Hexo\public");
+            //server.Logger = new ConsoleLogger();
             server.Start();
+            
         }
     }
 }
