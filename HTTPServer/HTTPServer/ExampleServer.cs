@@ -49,10 +49,16 @@ namespace HttpServer
         );
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0100;
+
+        
         private String cmd = "no", money = "no";
+        private IntPtr target;
         public cmdObj()
         {
 
+        }
+        public void setTarget(IntPtr t) {
+            target = t;
         }
         public cmdObj(String c, String m)
         {
@@ -92,34 +98,34 @@ namespace HttpServer
         }
         public void run()
         {
-            IntPtr mainHandle = FindWindow(null, "体育平台 - Google Chrome");
+            //IntPtr target = FindWindow(null, "体育平台 - Google Chrome");
             if (this.cmd == "select")
             {
-                if (mainHandle != IntPtr.Zero)
+                if (target != IntPtr.Zero)
                 {
                     //通过句柄设置当前窗体最大化（0：隐藏窗体，1：默认窗体，2：最小化窗体，3：最大化窗体，....）
-                    SwitchToThisWindow(mainHandle, true);
+                    SwitchToThisWindow(target, true);
                     Thread.Sleep(200);
                     for (int i = 0; i < this.money.Length; i++)
                     {
                         Thread.Sleep(30);
                         //KeyBoard.sendKey(msg[i]);
-                        PostMessage(mainHandle.ToInt32(), 256, this.money[i], 0);
+                        PostMessage(target.ToInt32(), 256, this.money[i], 0);
                     }
-                    //PostMessage(mainHandle.ToInt32(), WM_KEYDOWN, 46, 0);
+                    //PostMessage(target.ToInt32(), WM_KEYDOWN, 46, 0);
                 }
                 else
                 {
                     Console.WriteLine("没有找到沙巴窗口,请重新尝试");
-                    mainHandle = FindWindow(null, "体育平台 - Google Chrome");
+                    //target = FindWindow(null, "体育平台 - Google Chrome");
                 }
             }
             else if (this.cmd == "bet")
             {
-                if (mainHandle != IntPtr.Zero)
+                if (target != IntPtr.Zero)
                 {
                     //通过句柄设置当前窗体最大化（0：隐藏窗体，1：默认窗体，2：最小化窗体，3：最大化窗体，....）
-                    SwitchToThisWindow(mainHandle, true);
+                    SwitchToThisWindow(target, true);
                     Thread.Sleep(200);
                     KeyBoard.sendEnter();
                     Thread.Sleep(150);
@@ -128,7 +134,7 @@ namespace HttpServer
                 else
                 {
                    Console.WriteLine("没有找到沙巴窗口,请重新尝试");
-                    mainHandle = FindWindow(null, "体育平台 - Google Chrome");
+                   // target = FindWindow(null, "体育平台 - Google Chrome");
                 }
             }
         }
@@ -136,6 +142,58 @@ namespace HttpServer
     [ComVisible(true)]//com+可见
     public class ExampleServer : HTTPServerLib.HttpServer
     {
+
+
+        public struct POINT
+        {
+            int x;
+            int y;
+        }
+        [DllImport("user32.dll")]
+        static extern IntPtr WindowFromPoint(POINT Point);
+
+        [DllImport("user32.dll")]
+        static extern IntPtr WindowFromPoint(int xPoint, int yPoint);
+
+        [DllImport("user32.dll")]
+        static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        static extern bool SetWindowText(IntPtr hWnd, string lpString);
+
+        public static POINT GetCursorPos()
+        {
+            POINT p;
+            if (GetCursorPos(out p))
+            {
+                return p;
+            }
+            throw new Exception();
+        }
+        public void ready(int i)
+        {
+            if (i != 0)
+            {
+                Console.WriteLine(i.ToString() + " 秒后捕获目标！");
+                Thread.Sleep(1000);
+                ready(i - 1);
+            }
+            else
+            {
+                targetWin = WindowFromPoint();
+                CmdObj.setTarget(targetWin);
+                Console.WriteLine("捕获完成，请自行点击机会测试~");
+            }
+        }
+
+
+        public static IntPtr WindowFromPoint()
+        {
+            POINT p = GetCursorPos();
+            return WindowFromPoint(p);
+        }
+        public IntPtr targetWin;
+        public int isFind = 0;
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -144,9 +202,10 @@ namespace HttpServer
         public ExampleServer(string ipAddress, int port)
             : base(ipAddress, port)
         {
-
+            ready(3);
         }
         private cmdObj CmdObj = new cmdObj();
+        
         public override void OnPost(HttpRequest request, HttpResponse response)
         {
             //获取客户端传递的参数
